@@ -13,6 +13,8 @@ namespace SBOutputController
         [DllImport("user32.dll")]
         private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 
+        private const uint MOD_NOREPEAT = 0x4000;
+
         private class Window : NativeWindow, IDisposable
         {
             private static readonly int WM_HOTKEY = 0x0312;
@@ -60,19 +62,28 @@ namespace SBOutputController
             };
         }
 
-        public void RegisterHotKey(HotKey hotkey)
+        /// <summary>
+        /// Returns false when windows refused the hot key, another application is using it in that case.
+        /// An unassigned hot key is nothing to register and counts as success.
+        /// </summary>
+        public bool RegisterHotKey(HotKey hotkey)
         {
             if (hotkey == null || hotkey.Key == Key.None)
-                return;
+                return true;
 
             // increment the counter.
             _currentId += 1;
 
+            // MOD_NOREPEAT keeps a key that is held down from firing the hot key over and over,
+            // that matters for single key hot keys which are easy to keep pressed.
+            uint modifiers = (uint)hotkey.Modifiers | MOD_NOREPEAT;
+
             // register the hot key.
-            if (!RegisterHotKey(_window.Handle, _currentId, (uint)hotkey.Modifiers, (uint)KeyInterop.VirtualKeyFromKey(hotkey.Key)))
-                throw new InvalidOperationException("Couldn’t register the hot key.");
+            if (!RegisterHotKey(_window.Handle, _currentId, modifiers, (uint)KeyInterop.VirtualKeyFromKey(hotkey.Key)))
+                return false;
 
             _registeredHotKeys[hotkey] = _currentId;
+            return true;
         }
 
         public void UnregisterHotKey(HotKey hotkey)

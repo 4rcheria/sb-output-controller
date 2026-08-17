@@ -14,6 +14,7 @@ namespace SBOutputController
     public partial class MainWindow
     {
         private SBController _sbConnectApi = null;
+        private bool _setupInitialized = false;
         private readonly KeyboardHook _keyboardHook = new KeyboardHook();
         private readonly NotifyIcon _notifyIcon = new NotifyIcon();
         private readonly ContextMenu _notifyIconContextMenu = new ContextMenu();
@@ -95,8 +96,35 @@ namespace SBOutputController
             }
         }
 
+        /// <summary>
+        /// Runs the setup without ever showing the window, the application lives in the notification area instead.
+        /// Returns false when the setup isn't complete, the window has to be shown in that case so the
+        /// setup dialog can be used.
+        /// </summary>
+        public bool StartInBackground()
+        {
+            if (!SBController.VerifySetup(Properties.Settings.Default.SBExecutablePath))
+            {
+                return false;
+            }
+
+            _setupInitialized = true;
+            SetupChanged(Properties.Settings.Default.SBExecutablePath);
+
+            _notifyIcon.Visible = true;
+            return true;
+        }
+
         private void Window_ContentRendered(object sender, EventArgs e)
         {
+            // A background start already ran the setup, the window just wasn't visible at the time
+            if (_setupInitialized)
+            {
+                return;
+            }
+
+            _setupInitialized = true;
+
             if (!SBController.VerifySetup(Properties.Settings.Default.SBExecutablePath))
             {
                 ButtonOpenSetup_Click(this, null);
@@ -298,21 +326,21 @@ namespace SBOutputController
         private void HotKeyHeadphonesOutput_HotKeyChanged(object sender, RoutedEventArgs e)
         {
             _keyboardHook.UnregisterHotKey(Properties.Settings.Default.HotKeyOutputHeadphones);
-            _keyboardHook.RegisterHotKey(HotKeyOutputHeadphones.HotKey);
+            HotKeyOutputHeadphones.SetRegistrationFailed(!_keyboardHook.RegisterHotKey(HotKeyOutputHeadphones.HotKey));
             Properties.Settings.Default.HotKeyOutputHeadphones = HotKeyOutputHeadphones.HotKey;
             ListDevices.Focus();
         }
         private void HotKeySpeakersOutput_HotKeyChanged(object sender, RoutedEventArgs e)
         {
             _keyboardHook.UnregisterHotKey(Properties.Settings.Default.HotKeyOutputSpeakers);
-            _keyboardHook.RegisterHotKey(HotKeyOutputSpeakers.HotKey);
+            HotKeyOutputSpeakers.SetRegistrationFailed(!_keyboardHook.RegisterHotKey(HotKeyOutputSpeakers.HotKey));
             Properties.Settings.Default.HotKeyOutputSpeakers = HotKeyOutputSpeakers.HotKey;
             ListDevices.Focus();
         }
         private void HotKeyToggleOutput_HotKeyChanged(object sender, RoutedEventArgs e)
         {
             _keyboardHook.UnregisterHotKey(Properties.Settings.Default.HotKeyOutputToggle);
-            _keyboardHook.RegisterHotKey(HotKeyOutputToggle.HotKey);
+            HotKeyOutputToggle.SetRegistrationFailed(!_keyboardHook.RegisterHotKey(HotKeyOutputToggle.HotKey));
             Properties.Settings.Default.HotKeyOutputToggle = HotKeyOutputToggle.HotKey;
             ListDevices.Focus();
         }

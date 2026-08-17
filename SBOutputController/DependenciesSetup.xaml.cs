@@ -1,5 +1,4 @@
-﻿using Microsoft.Win32;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -71,23 +70,7 @@ namespace SBOutputController
             if (!IsInitialized)
                 return;
 
-#if DEBUG
-            string application_name = "SBOutputController (Debug)";
-#else
-            string application_name = "SBOutputController";
-#endif
-
-            var path = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
-            RegistryKey key = Registry.CurrentUser.OpenSubKey(path, true);
-
-            if (Properties.Settings.Default.RunOnStartup)
-            {
-                key.SetValue(application_name, System.Reflection.Assembly.GetExecutingAssembly().Location);
-            }
-            else
-            {
-                key.DeleteValue(application_name, false);
-            }
+            StartupRegistration.Apply(Properties.Settings.Default.RunOnStartup);
         }
     }
 }

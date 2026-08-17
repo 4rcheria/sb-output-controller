@@ -2,7 +2,7 @@
 What it can do:
 * Assign global hotkeys to switch between sound outputs
 * Keep your EqualizerAPO config.txt up to date depending on the sound output
-* Run on windows startup
+* Run on windows startup, hidden in the notification area
 
 ![Image of SBOutputController](https://raw.githubusercontent.com/heftyy/sb-output-controller/main/docs/SBOutputController_Main.png)
 

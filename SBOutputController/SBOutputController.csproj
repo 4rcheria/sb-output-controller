@@ -137,6 +137,7 @@
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
     <Compile Include="SBController.cs" />
+    <Compile Include="StartupRegistration.cs" />
     <Compile Include="DependenciesSetup.xaml.cs">
       <DependentUpon>DependenciesSetup.xaml</DependentUpon>
     </Compile>
