@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Forms;
+using System.Windows.Interop;
 using System.Windows.Media;
 using ContextMenu = System.Windows.Forms.ContextMenu;
 
@@ -75,7 +76,31 @@ namespace SBOutputController
             _notifyIcon.DoubleClick += Window_Show;
             _notifyIcon.ContextMenu = _notifyIconContextMenu;
 
+            // The window handle is created up front because a background start never shows the window,
+            // without it a second instance has nothing to send its show request to
+            HwndSource.FromHwnd(new WindowInteropHelper(this).EnsureHandle()).AddHook(SingleInstance_MessageHook);
+
+            // Settings used to be written only when the application was closed from the notification area,
+            // which lost everything configured in a session that ended with a reboot or a log off
+            Properties.Settings.Default.PropertyChanged += Settings_PropertyChanged;
+
             CheckboxEqualizerAPO_Changed(this, null);
+        }
+
+        private void Settings_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            Properties.Settings.Default.Save();
+        }
+
+        private IntPtr SingleInstance_MessageHook(IntPtr hwnd, int msg, IntPtr wparam, IntPtr lparam, ref bool handled)
+        {
+            if ((uint)msg == SingleInstance.ShowWindowMessage)
+            {
+                Window_Show(this, EventArgs.Empty);
+                handled = true;
+            }
+
+            return IntPtr.Zero;
         }
 
         private void InitializeSBConnect()
